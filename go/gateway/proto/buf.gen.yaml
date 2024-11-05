@@ -1,0 +1,10 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/obnahsgnaw/socketclient/go/gateway/gen
+plugins:
+  # protoc-gen-go:go install google.golang.org/protobuf/cmd/protoc-gen-go
+  - plugin: go
+    out: ../gen
+    opt: paths=source_relative
