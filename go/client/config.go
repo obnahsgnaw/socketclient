@@ -40,13 +40,21 @@ func ToPkg(ptr codec.DataPtr) *codec.PKG {
 	}
 }
 
+func DataTypeCoder(dataType codec.Name) (codec.Codec, codec.PkgBuilder, codec.DataBuilder) {
+	if dataType == codec.Json {
+		return codec.NewDelimiterCodec([]byte("\\N\\B"), []byte("\\N\\B")), codec.NewJsonPackageBuilder(ToData, ToPkg), codec.NewJsonDataBuilder()
+	}
+	return codec.NewLengthCodec(0xAB, 1024), codec.NewProtobufPackageBuilder(ToData, ToPkg), codec.NewProtobufDataBuilder()
+}
+
 func Default(ip string, port int, dataType codec.Name) *Config {
-	c := &Config{
+	protocolCoder, gatewayPkgCoder, dataCoder := DataTypeCoder(dataType)
+	return &Config{
 		Ip:                ip,
 		Port:              port,
-		ProtocolCoder:     codec.NewLengthCodec(0xAB, 1024),
-		DataCoder:         codec.NewProtobufDataBuilder(),
-		GatewayPkgCoder:   codec.NewProtobufPackageBuilder(ToData, ToPkg),
+		ProtocolCoder:     protocolCoder,
+		DataCoder:         dataCoder,
+		GatewayPkgCoder:   gatewayPkgCoder,
 		RetryInterval:     time.Second * 10,
 		KeepaliveInterval: time.Second * 5,
 		Timeout:           time.Second * 5,
@@ -54,10 +62,4 @@ func Default(ip string, port int, dataType codec.Name) *Config {
 		PackageLogWatcher: func(msgType client.MsgType, msg string, pkg []byte) {},
 		ActionLogWatcher:  func(action codec.Action, msg string) {},
 	}
-	if dataType == codec.Json {
-		c.ProtocolCoder = codec.NewDelimiterCodec([]byte("\\N\\B"), []byte("\\N\\B"))
-		c.DataCoder = codec.NewJsonDataBuilder()
-		c.GatewayPkgCoder = codec.NewJsonPackageBuilder(ToData, ToPkg)
-	}
-	return c
 }

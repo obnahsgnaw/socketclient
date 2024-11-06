@@ -1,16 +1,31 @@
 package security
 
-import "errors"
+import (
+	"errors"
+	"github.com/obnahsgnaw/application/pkg/security"
+)
 
 type Interceptor struct {
-	s *Server
+	disabled func() bool
+	es       func() *security.EsCrypto
+	esKey    func() []byte
+	encode   func() bool
+}
+
+func NewInterceptor(es func() *security.EsCrypto, esKey func() []byte, encode func() bool, disabled func() bool) *Interceptor {
+	return &Interceptor{
+		disabled: disabled,
+		es:       es,
+		esKey:    esKey,
+		encode:   encode,
+	}
 }
 
 func (p *Interceptor) Encode(b []byte) ([]byte, error) {
-	if p.s.disabled {
+	if p.disabled() {
 		return b, nil
 	}
-	b1, iv, err := p.s.es.Encrypt(b, p.s.esKey, p.s.encode)
+	b1, iv, err := p.es().Encrypt(b, p.esKey(), p.encode())
 	if err != nil {
 		return nil, err
 	}
@@ -18,14 +33,14 @@ func (p *Interceptor) Encode(b []byte) ([]byte, error) {
 }
 
 func (p *Interceptor) Decode(b []byte) ([]byte, error) {
-	if p.s.disabled {
+	if p.disabled() {
 		return b, nil
 	}
 
-	if len(b) < p.s.es.Type().IvLen() {
+	if len(b) < p.es().Type().IvLen() {
 		return nil, errors.New("invalid data length")
 	}
-	iv := b[:p.s.es.Type().IvLen()]
-	b = b[p.s.es.Type().IvLen():]
-	return p.s.es.Decrypt(b, p.s.esKey, iv, p.s.encode)
+	iv := b[:p.es().Type().IvLen()]
+	b = b[p.es().Type().IvLen():]
+	return p.es().Decrypt(b, p.esKey(), iv, p.encode())
 }

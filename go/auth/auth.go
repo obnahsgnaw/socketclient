@@ -48,7 +48,7 @@ func (s *Server) with(o ...Option) {
 
 func (s *Server) start() {
 	s.client.Log(zapcore.InfoLevel, "auth: init start")
-	if s.auth.Token != "" {
+	if s.auth != nil && s.auth.AppId != "" && s.auth.Token != "" {
 		if err := s.client.Client().Send(action.AuthReqAction, &gatewayv1.AuthRequest{Token: utils.ToStr(s.auth.AppId, " ", s.auth.Token)}); err != nil {
 			s.client.Log(zapcore.ErrorLevel, "auth: init send failed, err="+err.Error())
 		}

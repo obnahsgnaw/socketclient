@@ -1,0 +1,17 @@
+version: v1
+name: buf.build/efly/frontendapi
+breaking:
+  use:
+    - FILE
+lint:
+  use:
+    - DEFAULT
+  ignore:
+  #    - google/protobuf/timestamp.proto
+  except:
+    - ENUM_VALUE_PREFIX
+    - ENUM_VALUE_UPPER_SNAKE_CASE
+    - ENUM_ZERO_VALUE_SUFFIX
+    - RPC_REQUEST_RESPONSE_UNIQUE
+    - RPC_RESPONSE_STANDARD_NAME
+    - RPC_REQUEST_STANDARD_NAME

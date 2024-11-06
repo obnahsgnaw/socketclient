@@ -1,0 +1,23 @@
+syntax = "proto3";
+package tcpgw_frontend_api.proxy.v1;
+option go_package = "tcpgw_frontend_api/proxy/v1";
+import "validate/validate.proto";
+
+enum CodecType{
+  Json = 0;
+  Proto = 1;
+}
+message SendRequest{
+  CodecType codec_type = 1[
+    (validate.rules).enum = {defined_only:true}
+  ];
+  string client_id = 2[
+    (validate.rules).string = {ignore_empty: false, len:32}
+  ];
+  string package = 3;
+  bool init = 4;
+}
+
+message SendResponse{
+  string package = 1;
+}
