@@ -22,23 +22,24 @@ import (
 )
 
 type Server struct {
-	client           *http.Client
-	dataType         codec.Name
-	auth             *auth.Auth
-	rsa              *security.RsaCrypto
-	es               *security.EsCrypto
-	encoder          security.Encoder
-	gatewayPkgCoder  codec.PkgBuilder
-	dataCoder        codec.DataBuilder
-	proxyDataCoder   codec.DataBuilder
-	interceptor      *security2.Interceptor
-	encode           bool
-	initialized      bool
-	securityDisabled bool
-	publicKey        []byte
-	esKey            []byte
-	clientId         string
-	proxyUrl         string
+	client            *http.Client
+	dataType          codec.Name
+	auth              *auth.Auth
+	rsa               *security.RsaCrypto
+	es                *security.EsCrypto
+	encoder           security.Encoder
+	gatewayPkgCoder   codec.PkgBuilder
+	dataCoder         codec.DataBuilder
+	proxyDataCoder    codec.DataBuilder
+	interceptor       *security2.Interceptor
+	encode            bool
+	initialized       bool
+	securityDisabled  bool
+	publicKey         []byte
+	esKey             []byte
+	clientId          string
+	proxyUrl          string
+	gatewayErrHandler func(status gatewayv1.GatewayError_Status, triggerId uint32)
 }
 
 func New(clientId, proxyUrl string, dataType codec.Name, o ...Option) *Server {
@@ -56,7 +57,7 @@ func New(clientId, proxyUrl string, dataType codec.Name, o ...Option) *Server {
 		encoder:         security.B64Encoding,
 		gatewayPkgCoder: gatewayPkgCoder,
 		dataCoder:       dataCoder,
-		proxyDataCoder:  codec.NewJsonDataBuilder(),
+		proxyDataCoder:  codec.NewProtobufDataBuilder(),
 		clientId:        toMd5(clientId),
 		proxyUrl:        proxyUrl,
 	}
@@ -75,6 +76,9 @@ func New(clientId, proxyUrl string, dataType codec.Name, o ...Option) *Server {
 			return s.securityDisabled
 		},
 	)
+	s.gatewayErrHandler = func(status gatewayv1.GatewayError_Status, triggerId uint32) {
+		log.Println("Gateway Error:", status, " of trigger action ", triggerId)
+	}
 	return s
 }
 
@@ -96,7 +100,7 @@ func (s *Server) SendActionPackage(act codec.ActionId, data []byte) (codec.Actio
 	}
 	respAct, respData, err := s.sendActionPackage(act, data)
 	if err != nil && !s.initialized { // try again
-		return s.sendActionPackage(act, data)
+		respAct, respData, err = s.sendActionPackage(act, data)
 	}
 	ttl := time.Now().UnixNano() - startTime
 	s.log("send action done, ttl=", showTime(time.Duration(ttl)))
@@ -108,41 +112,45 @@ func (s *Server) DataCoder() codec.DataBuilder {
 }
 
 func (s *Server) sendActionPackage(act codec.ActionId, data []byte) (respAct codec.ActionId, respData []byte, err error) {
-	var body []byte
-	if body, err = s.dataCoder.Pack(data); err != nil {
-		err = errors.New("encode data failed, err=" + err.Error())
-		return
-	}
-
-	if body, err = s.gatewayPkgCoder.Pack(&codec.PKG{Action: act, Data: body}); err != nil {
+	if data, err = s.gatewayPkgCoder.Pack(&codec.PKG{Action: act, Data: data}); err != nil {
 		err = errors.New("encode gateway package failed, err=" + err.Error())
 		return
 	}
 
-	if body, err = s.interceptor.Encode(body); err != nil {
+	if data, err = s.interceptor.Encode(data); err != nil {
 		err = errors.New("encrypt data failed, err=" + err.Error())
 		return
 	}
 
-	if body, err = s.request("POST", s.proxyUrl, body, false); err != nil {
+	if data, err = s.request("POST", s.proxyUrl, data, false); err != nil {
 		err = errors.New("send package failed, err=" + err.Error())
 		return
 	}
 
-	if string(body) == security2.FailedWithSecurity {
+	if string(data) == security2.FailedWithSecurity {
 		s.initialized = false
 		err = errors.New("need init")
 		return
 	}
 
-	if body, err = s.interceptor.Decode(body); err != nil {
+	if data, err = s.interceptor.Decode(data); err != nil {
 		err = errors.New("decrypt data failed, err=" + err.Error())
 		return
 	}
 
 	var pkg *codec.PKG
-	if pkg, err = s.gatewayPkgCoder.Unpack(body); err != nil {
+	if pkg, err = s.gatewayPkgCoder.Unpack(data); err != nil {
 		err = errors.New("decode gateway package failed, err=" + err.Error())
+		return
+	}
+
+	// gateway error
+	if gatewayv1.ActionId(pkg.Action.Val()) == gatewayv1.ActionId_GatewayErr {
+		err = errors.New("gateway package error")
+		gwErr := gatewayv1.GatewayError{}
+		if err1 := s.dataCoder.Unpack(pkg.Data, &gwErr); err1 == nil {
+			s.gatewayErrHandler(gwErr.Status, gwErr.TriggerAction)
+		}
 		return
 	}
 

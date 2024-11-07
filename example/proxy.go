@@ -4,6 +4,7 @@ import (
 	security2 "github.com/obnahsgnaw/application/pkg/security"
 	auth2 "github.com/obnahsgnaw/socketclient/go/auth"
 	"github.com/obnahsgnaw/socketclient/go/gateway/action"
+	gatewayv1 "github.com/obnahsgnaw/socketclient/go/gateway/gen/gateway/v1"
 	proxy2 "github.com/obnahsgnaw/socketclient/go/proxy"
 	"github.com/obnahsgnaw/socketutil/codec"
 	"log"
@@ -27,15 +28,23 @@ IwIDAQAB
 		proxy2.Es(security2.Aes256, security2.CbcMode),
 		proxy2.Encoder(security2.B64Encoding),
 		proxy2.Encode(true),
+		proxy2.GatewayErrHandler(func(status gatewayv1.GatewayError_Status, triggerId uint32) {
+			log.Println("gateway error:", status, " of action ", triggerId)
+		}),
 	)
 
+	resp := gatewayv1.PongResponse{}
+	//proxy.DataCoder().Pack(nil)
 	respAct, respData, err := proxy.SendActionPackage(action.PingAction.Id, nil)
 	if err != nil {
 		log.Print(err)
 		return
 	}
-
-	log.Print(respAct.String(), string(respData))
+	if err = proxy.DataCoder().Unpack(respData, &resp); err != nil {
+		log.Print(err)
+		return
+	}
+	log.Print("response action:", respAct.String(), ", service time:", resp.Timestamp.AsTime().String())
 
 	respAct, respData, err = proxy.SendActionPackage(action.PingAction.Id, nil)
 	if err != nil {
@@ -43,5 +52,9 @@ IwIDAQAB
 		return
 	}
 
-	log.Print(respAct.String(), string(respData))
+	if err = proxy.DataCoder().Unpack(respData, &resp); err != nil {
+		log.Print(err)
+		return
+	}
+	log.Print("response action:", respAct.String(), ", service time:", resp.Timestamp.AsTime().String())
 }

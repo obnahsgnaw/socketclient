@@ -3,6 +3,7 @@ package proxy
 import (
 	"github.com/obnahsgnaw/application/pkg/security"
 	"github.com/obnahsgnaw/socketclient/go/auth"
+	gatewayv1 "github.com/obnahsgnaw/socketclient/go/gateway/gen/gateway/v1"
 )
 
 type Option func(*Server)
@@ -40,5 +41,13 @@ func Encoder(c security.Encoder) Option {
 func Encode(e bool) Option {
 	return func(s *Server) {
 		s.encode = e
+	}
+}
+
+func GatewayErrHandler(f func(status gatewayv1.GatewayError_Status, triggerId uint32)) Option {
+	return func(s *Server) {
+		if f != nil {
+			s.gatewayErrHandler = f
+		}
 	}
 }
