@@ -100,6 +100,10 @@ func (s *Server) SendActionPackage(act codec.ActionId, data []byte) (codec.Actio
 	}
 	respAct, respData, err := s.sendActionPackage(act, data)
 	if err != nil && !s.initialized { // try again
+		if err = s.init(); err != nil {
+			s.log("init failed, err=", err.Error())
+			return codec.ActionId(0), nil, err
+		}
 		respAct, respData, err = s.sendActionPackage(act, data)
 	}
 	ttl := time.Now().UnixNano() - startTime

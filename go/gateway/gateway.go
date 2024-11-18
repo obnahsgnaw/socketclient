@@ -39,8 +39,8 @@ func New(c *client.Client, o ...Option) *Server {
 		s.sec.WhenReady(s.start)
 		s.sec.WhenPaused(s.stop)
 	} else {
-		s.WhenReady(s.start)
-		s.WhenPaused(s.stop)
+		s.client.WhenReady(s.start)
+		s.client.WhenPaused(s.stop)
 	}
 
 	return s
