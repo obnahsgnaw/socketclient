@@ -251,7 +251,9 @@ func (s *Server) request(method string, url string, body []byte, init bool) (pkg
 		return
 	}
 	if resp.StatusCode != http.StatusOK {
-		err = errors.New("request failed with " + resp.Status)
+		body, _ = io.ReadAll(resp.Body)
+		defer func(b io.ReadCloser) { _ = b.Close() }(resp.Body)
+		err = errors.New("request failed with " + resp.Status + ", body=" + string(body))
 		return
 	}
 	body, err = io.ReadAll(resp.Body)
