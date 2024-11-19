@@ -51,3 +51,12 @@ func GatewayErrHandler(f func(status gatewayv1.GatewayError_Status, triggerId ui
 		}
 	}
 }
+
+func Target(typ, id string) Option {
+	return func(s *Server) {
+		if typ != "" {
+			s.targetType = typ
+			s.targetId = id
+		}
+	}
+}

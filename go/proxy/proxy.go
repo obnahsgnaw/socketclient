@@ -40,6 +40,8 @@ type Server struct {
 	clientId          string
 	proxyUrl          string
 	gatewayErrHandler func(status gatewayv1.GatewayError_Status, triggerId uint32)
+	targetType        string
+	targetId          string
 }
 
 func New(clientId, proxyUrl string, dataType codec.Name, o ...Option) *Server {
@@ -60,6 +62,7 @@ func New(clientId, proxyUrl string, dataType codec.Name, o ...Option) *Server {
 		proxyDataCoder:  codec.NewProtobufDataBuilder(),
 		clientId:        toMd5(clientId),
 		proxyUrl:        proxyUrl,
+		targetType:      "user",
 	}
 	s.with(o...)
 	s.interceptor = security2.NewInterceptor(
@@ -184,11 +187,9 @@ func (s *Server) exchangeKey() (err error) {
 		if pkg, err = security2.BuildEsKeyPackage(s.rsa, s.publicKey, s.esKey, s.encode); err != nil {
 			return err
 		}
-	} else {
-		pkg = []byte("1")
 	}
 	var resp []byte
-	if resp, err = s.request("POST", s.proxyUrl, pkg, true); err != nil {
+	if resp, err = s.request("POST", s.proxyUrl, append([]byte(utils.ToStr(s.targetType, "@", s.targetId, "@", s.dataType.String(), "::")), pkg...), true); err != nil {
 		return err
 	}
 	respStatus := string(resp)

@@ -2,6 +2,7 @@ package security
 
 import (
 	"github.com/obnahsgnaw/application/pkg/security"
+	"github.com/obnahsgnaw/application/pkg/utils"
 	"github.com/obnahsgnaw/socketutil/codec"
 	"strconv"
 	"time"
@@ -14,14 +15,6 @@ func BuildEsKeyPackage(rsa *security.RsaCrypto, publicKey, esKey []byte, encode 
 	return rsa.Encrypt(timestampKey, publicKey, encode)
 }
 
-func BuildDataTypePackage(dt codec.Name, pkg []byte) []byte {
-	// proto 增加协议字节
-	if dt == codec.Proto && (len(pkg) == 0 || pkg[0] == 'j') {
-		pkg = append([]byte("b"), pkg...)
-	}
-	// json 增加协议字节
-	if dt == codec.Json && (len(pkg) == 0 || (pkg[0] != 'j' && pkg[0] != '{')) {
-		pkg = append([]byte("j"), pkg...)
-	}
-	return pkg
+func BuildDataTypePackage(typ, id string, dt codec.Name, pkg []byte) []byte {
+	return append([]byte(utils.ToStr(typ, "@", id, "@", dt.String(), "::")), pkg...)
 }

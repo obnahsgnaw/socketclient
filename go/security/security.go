@@ -28,14 +28,17 @@ type Server struct {
 	initialized bool
 	disabled    bool
 	failedCb    func(error)
+	targetType  string
+	targetId    string
 }
 
 func New(c *client.Client, publicKey []byte, o ...Option) *Server {
 	s := &Server{
-		client:    c,
-		rsa:       security.NewRsa(),
-		es:        security.NewEsCrypto(security.Aes256, security.CbcMode),
-		publicKey: publicKey,
+		client:     c,
+		rsa:        security.NewRsa(),
+		es:         security.NewEsCrypto(security.Aes256, security.CbcMode),
+		publicKey:  publicKey,
+		targetType: "user",
 	}
 	s.with(o...)
 	s.withInterceptor()
@@ -63,7 +66,7 @@ func (s *Server) start() {
 			s.failedCb(errors.New("rsa encrypt failed: " + err.Error()))
 		}
 	}
-	encodeKey = BuildDataTypePackage(s.client.Config().DataCoder.Name(), encodeKey)
+	encodeKey = BuildDataTypePackage(s.targetType, s.targetId, s.client.Config().DataCoder.Name(), encodeKey)
 
 	if err := s.client.Client().SendRaw(encodeKey); err != nil {
 		s.client.Log(zapcore.ErrorLevel, "security: send initialize package failed: "+err.Error())

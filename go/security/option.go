@@ -30,6 +30,15 @@ func Encode(e bool) Option {
 	}
 }
 
+func Target(typ, id string) Option {
+	return func(s *Server) {
+		if typ != "" {
+			s.targetType = typ
+			s.targetId = id
+		}
+	}
+}
+
 func Failed(f func(error)) Option {
 	return func(s *Server) {
 		if f != nil {
