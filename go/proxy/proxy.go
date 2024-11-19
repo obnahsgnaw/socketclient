@@ -270,7 +270,7 @@ func (s *Server) toProxyPackage(body []byte, init bool) ([]byte, error) {
 	data := &proxyv1.SendRequest{
 		CodecType: 0,
 		ClientId:  s.clientId,
-		Package:   string(body),
+		Package:   body,
 		Init:      init,
 	}
 	if s.dataType == codec.Json {
@@ -287,7 +287,7 @@ func (s *Server) parseProxyPackage(body []byte) ([]byte, error) {
 	if err := s.proxyDataCoder.Unpack(body, &pkg); err != nil {
 		return nil, errors.New("decode proxy response data failed, err=" + err.Error() + ", raw response is: " + string(body))
 	}
-	return []byte(pkg.Package), nil
+	return pkg.Package, nil
 }
 
 func (s *Server) log(msg ...any) {

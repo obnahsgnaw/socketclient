@@ -14,10 +14,10 @@ message SendRequest{
   string client_id = 2[
     (validate.rules).string = {ignore_empty: false, len:32}
   ];
-  string package = 3;
+  bytes package = 3;
   bool init = 4;
 }
 
 message SendResponse{
-  string package = 1;
+  bytes package = 1;
 }
