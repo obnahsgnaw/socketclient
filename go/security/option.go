@@ -32,7 +32,12 @@ func Encode(e bool) Option {
 
 func TargetInfo(target *Target) Option {
 	return func(s *Server) {
-		s.target = target
+		if s.target != nil {
+			s.target = target
+			if s.target.Type == "" {
+				s.target.Type = "user"
+			}
+		}
 	}
 }
 

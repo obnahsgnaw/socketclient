@@ -4,6 +4,7 @@ import (
 	"github.com/obnahsgnaw/application/pkg/security"
 	"github.com/obnahsgnaw/socketclient/go/auth"
 	gatewayv1 "github.com/obnahsgnaw/socketclient/go/gateway/gen/gateway/v1"
+	security2 "github.com/obnahsgnaw/socketclient/go/security"
 )
 
 type Option func(*Server)
@@ -11,12 +12,6 @@ type Option func(*Server)
 func Auth(as *auth.Auth) Option {
 	return func(s *Server) {
 		s.auth = as
-	}
-}
-
-func PublicKey(key []byte) Option {
-	return func(s *Server) {
-		s.publicKey = key
 	}
 }
 
@@ -52,11 +47,13 @@ func GatewayErrHandler(f func(status gatewayv1.GatewayError_Status, triggerId ui
 	}
 }
 
-func Target(typ, id string) Option {
+func Target(target *security2.Target) Option {
 	return func(s *Server) {
-		if typ != "" {
-			s.targetType = typ
-			s.targetId = id
+		if s.target != nil {
+			s.target = target
+			if s.target.Type == "" {
+				s.target.Type = "user"
+			}
 		}
 	}
 }

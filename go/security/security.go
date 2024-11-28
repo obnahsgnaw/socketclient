@@ -73,7 +73,7 @@ func (s *Server) start() {
 			s.failedCb(errors.New("rsa encrypt failed: " + err.Error()))
 		}
 	}
-	encodeKey = BuildDataTypePackage(s.target.Type, s.target.Id, s.client.Config().DataCoder.Name(), encodeKey)
+	encodeKey = AuthenticatePackage(s.target.Type, s.target.Id, s.client.Config().DataCoder.Name(), encodeKey)
 
 	if err := s.client.Client().SendRaw(encodeKey); err != nil {
 		s.client.Log(zapcore.ErrorLevel, "security: send initialize package failed: "+err.Error())

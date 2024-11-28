@@ -35,13 +35,11 @@ type Server struct {
 	encode            bool
 	initialized       bool
 	securityDisabled  bool
-	publicKey         []byte
 	esKey             []byte
 	clientId          string
 	proxyUrl          string
 	gatewayErrHandler func(status gatewayv1.GatewayError_Status, triggerId uint32)
-	targetType        string
-	targetId          string
+	target            *security2.Target
 }
 
 func New(clientId, proxyUrl string, dataType codec.Name, o ...Option) *Server {
@@ -62,9 +60,11 @@ func New(clientId, proxyUrl string, dataType codec.Name, o ...Option) *Server {
 		proxyDataCoder:  codec.NewProtobufDataBuilder(),
 		clientId:        toMd5(clientId),
 		proxyUrl:        proxyUrl,
-		targetType:      "user",
 	}
 	s.with(o...)
+	if s.target == nil {
+		s.target = &security2.Target{Type: "user"}
+	}
 	s.interceptor = security2.NewInterceptor(
 		func() *security.EsCrypto {
 			return s.es
@@ -183,13 +183,13 @@ func (s *Server) exchangeKey() (err error) {
 	s.log("exchange security key start")
 	s.esKey = s.es.Type().RandKey()
 	var pkg []byte
-	if len(s.publicKey) > 0 {
-		if pkg, err = security2.BuildEsKeyPackage(s.rsa, s.publicKey, s.esKey, s.encode); err != nil {
+	if len(s.target.PubCert) > 0 {
+		if pkg, err = security2.BuildEsKeyPackage(s.rsa, s.target.PubCert, s.esKey, s.encode); err != nil {
 			return err
 		}
 	}
 	var resp []byte
-	if resp, err = s.request("POST", s.proxyUrl, append([]byte(utils.ToStr(s.targetType, "@", s.targetId, "@", s.dataType.String(), "::")), pkg...), true); err != nil {
+	if resp, err = s.request("POST", s.proxyUrl, security2.AuthenticatePackage(s.target.Type, s.target.Id, s.dataType, pkg), true); err != nil {
 		return err
 	}
 	respStatus := string(resp)

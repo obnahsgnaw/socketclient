@@ -15,6 +15,6 @@ func BuildEsKeyPackage(rsa *security.RsaCrypto, publicKey, esKey []byte, encode 
 	return rsa.Encrypt(timestampKey, publicKey, encode)
 }
 
-func BuildDataTypePackage(typ, id string, dt codec.Name, pkg []byte) []byte {
+func AuthenticatePackage(typ, id string, dt codec.Name, pkg []byte) []byte {
 	return append([]byte(utils.ToStr(typ, "@", id, "@", dt.String(), "::")), pkg...)
 }

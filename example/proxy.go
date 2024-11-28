@@ -6,6 +6,7 @@ import (
 	"github.com/obnahsgnaw/socketclient/go/gateway/action"
 	gatewayv1 "github.com/obnahsgnaw/socketclient/go/gateway/gen/gateway/v1"
 	proxy2 "github.com/obnahsgnaw/socketclient/go/proxy"
+	"github.com/obnahsgnaw/socketclient/go/security"
 	"github.com/obnahsgnaw/socketutil/codec"
 	"log"
 )
@@ -23,7 +24,7 @@ IwIDAQAB
 `)
 	auth := &auth2.Auth{}
 	proxy := proxy2.New("abc", "http://127.0.0.1:8028/v1/tcp-gw/proxy", codec.Json,
-		proxy2.PublicKey(pub),
+		proxy2.Target(&security.Target{Type: "user", PubCert: pub}),
 		proxy2.Auth(auth),
 		proxy2.Es(security2.Aes256, security2.CbcMode),
 		proxy2.Encoder(security2.B64Encoding),
