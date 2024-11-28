@@ -131,10 +131,11 @@ func (s *Server) Stop() {
 	s.Client().Stop()
 }
 
-func Default(ctx context.Context, ip string, port int, dataType codec.Name, pub []byte, token *auth.Auth) *Server {
+func Default(ctx context.Context, ip string, port int, dataType codec.Name, target *security.Target, token *auth.Auth) *Server {
 	config := client.Default(ip, port, dataType)
 	conn := client.New(ctx, config)
-	securityServer := security.New(conn, pub,
+	securityServer := security.New(conn,
+		security.TargetInfo(target),
 		security.Es(security2.Aes256, security2.CbcMode),
 		security.Encoder(security2.B64Encoding),
 		security.Encode(true),

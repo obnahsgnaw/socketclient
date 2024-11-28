@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/obnahsgnaw/socketclient/go/auth"
 	"github.com/obnahsgnaw/socketclient/go/gateway"
+	"github.com/obnahsgnaw/socketclient/go/security"
 	"github.com/obnahsgnaw/socketutil/codec"
 )
 
@@ -25,9 +26,14 @@ IwIDAQAB
 		AppId: "",
 		Token: "",
 	}
+	target := &security.Target{
+		Type:    "user",
+		Id:      "",
+		PubCert: pub,
+	}
 	dataType := codec.Proto
 
-	gw := gateway.Default(ctx, "127.0.0.1", 1811, dataType, pub, token)
+	gw := gateway.Default(ctx, "127.0.0.1", 1811, dataType, target, token)
 
 	gw.Start()
 

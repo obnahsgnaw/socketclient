@@ -23,27 +23,34 @@ type Server struct {
 	es          *security.EsCrypto
 	encoder     security.Encoder
 	encode      bool
-	publicKey   []byte
 	esKey       []byte
 	initialized bool
 	disabled    bool
 	failedCb    func(error)
-	targetType  string
-	targetId    string
+	target      *Target
 }
 
-func New(c *client.Client, publicKey []byte, o ...Option) *Server {
+type Target struct {
+	Type    string
+	Id      string
+	PubCert []byte
+}
+
+func New(c *client.Client, o ...Option) *Server {
 	s := &Server{
-		client:     c,
-		rsa:        security.NewRsa(),
-		es:         security.NewEsCrypto(security.Aes256, security.CbcMode),
-		publicKey:  publicKey,
-		targetType: "user",
+		client: c,
+		rsa:    security.NewRsa(),
+		es:     security.NewEsCrypto(security.Aes256, security.CbcMode),
 	}
 	s.with(o...)
 	s.withInterceptor()
 	c.WhenReady(s.start)
 	c.WhenPaused(s.stop)
+	if s.target == nil {
+		s.target = &Target{
+			Type: "user",
+		}
+	}
 	return s
 }
 
@@ -59,14 +66,14 @@ func (s *Server) start() {
 	s.client.Log(zapcore.InfoLevel, "security: init start")
 	s.esKey = s.es.Type().RandKey()
 	var encodeKey []byte
-	if len(s.publicKey) > 0 {
+	if len(s.target.PubCert) > 0 {
 		var err error
-		if encodeKey, err = BuildEsKeyPackage(s.rsa, s.publicKey, s.esKey, s.encode); err != nil {
+		if encodeKey, err = BuildEsKeyPackage(s.rsa, s.target.PubCert, s.esKey, s.encode); err != nil {
 			s.client.Log(zapcore.ErrorLevel, "security: rsa encrypt failed: "+err.Error())
 			s.failedCb(errors.New("rsa encrypt failed: " + err.Error()))
 		}
 	}
-	encodeKey = BuildDataTypePackage(s.targetType, s.targetId, s.client.Config().DataCoder.Name(), encodeKey)
+	encodeKey = BuildDataTypePackage(s.target.Type, s.target.Id, s.client.Config().DataCoder.Name(), encodeKey)
 
 	if err := s.client.Client().SendRaw(encodeKey); err != nil {
 		s.client.Log(zapcore.ErrorLevel, "security: send initialize package failed: "+err.Error())

@@ -30,12 +30,9 @@ func Encode(e bool) Option {
 	}
 }
 
-func Target(typ, id string) Option {
+func TargetInfo(target *Target) Option {
 	return func(s *Server) {
-		if typ != "" {
-			s.targetType = typ
-			s.targetId = id
-		}
+		s.target = target
 	}
 }
 
