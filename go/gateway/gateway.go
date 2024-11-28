@@ -1,7 +1,9 @@
 package gateway
 
 import (
+	"context"
 	"errors"
+	security2 "github.com/obnahsgnaw/application/pkg/security"
 	"github.com/obnahsgnaw/socketclient/go/auth"
 	"github.com/obnahsgnaw/socketclient/go/base"
 	"github.com/obnahsgnaw/socketclient/go/client"
@@ -70,10 +72,6 @@ func (s *Server) stop() {
 	s.Pause()
 }
 
-func (s *Server) Client() *client.Client {
-	return s.client
-}
-
 func (s *Server) withHeartbeat() error {
 	s.client.Client().Listen(action.PoneAction, func() codec.DataPtr {
 		return &gatewayv1.PongResponse{}
@@ -103,4 +101,51 @@ func (s *Server) withGatewayError() {
 		}
 		return
 	})
+}
+
+func (s *Server) Client() *client.Client {
+	return s.client
+}
+
+func (s *Server) Security() *security.Server {
+	return s.sec
+}
+
+func (s *Server) Auth() *auth.Server {
+	return s.auth
+}
+
+func (s *Server) Start() {
+	s.Client().Start()
+}
+
+func (s *Server) Stop() {
+	s.Client().Stop()
+}
+
+func Default(ctx context.Context, ip string, port int, dataType codec.Name, pub []byte, token *auth.Auth) *Server {
+	config := client.Default(ip, port, dataType)
+	conn := client.New(ctx, config)
+	securityServer := security.New(conn, pub,
+		security.Es(security2.Aes256, security2.CbcMode),
+		security.Encoder(security2.B64Encoding),
+		security.Encode(true),
+		security.Failed(func(err error) {
+			//
+		}),
+	)
+	authServer := auth.New(conn, token,
+		auth.Security(securityServer),
+		auth.Failed(func(a *auth.Auth) {
+			//
+		}),
+	)
+	return New(conn,
+		Security(securityServer),
+		Auth(authServer),
+		Heartbeat(time.Second),
+		Error(func(act uint32, status gatewayv1.GatewayError_Status) {
+			//
+		}),
+	)
 }
