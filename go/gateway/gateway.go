@@ -70,6 +70,10 @@ func (s *Server) stop() {
 	s.Pause()
 }
 
+func (s *Server) Client() *client.Client {
+	return s.client
+}
+
 func (s *Server) withHeartbeat() error {
 	s.client.Client().Listen(action.PoneAction, func() codec.DataPtr {
 		return &gatewayv1.PongResponse{}
