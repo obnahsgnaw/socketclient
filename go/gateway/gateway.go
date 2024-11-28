@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-var HeartbeatMin = 1 * time.Second // 最小 5 秒
+var HeartbeatMin = 5 * time.Second // 最小 5 秒
 
 type Server struct {
 	base.Server
@@ -70,6 +70,14 @@ func (s *Server) start() {
 func (s *Server) stop() {
 	s.client.Log(zapcore.InfoLevel, "gateway: stop")
 	s.Pause()
+}
+
+func (s *Server) PauseHeartbeat() {
+	s.client.Client().HeartbeatPause()
+}
+
+func (s *Server) ContinueHeartbeat() {
+	s.client.Client().HeartbeatContinue()
 }
 
 func (s *Server) withHeartbeat() error {
