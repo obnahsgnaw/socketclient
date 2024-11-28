@@ -5,6 +5,7 @@ import (
 	"github.com/obnahsgnaw/socketutil/client"
 	"github.com/obnahsgnaw/socketutil/codec"
 	"go.uber.org/zap/zapcore"
+	"log"
 	"time"
 )
 
@@ -58,8 +59,14 @@ func Default(ip string, port int, dataType codec.Name) *Config {
 		RetryInterval:     time.Second * 10,
 		KeepaliveInterval: time.Second * 5,
 		Timeout:           time.Second * 5,
-		ServerLogWatcher:  func(level zapcore.Level, msg string) {},
-		PackageLogWatcher: func(msgType client.MsgType, msg string, pkg []byte) {},
-		ActionLogWatcher:  func(action codec.Action, msg string) {},
+		ServerLogWatcher: func(level zapcore.Level, msg string) {
+			log.Print("server: [", level.String(), "] ", msg)
+		},
+		PackageLogWatcher: func(msgType client.MsgType, msg string, pkg []byte) {
+			log.Println(msgType.String(), "package: ", msg, string(pkg))
+		},
+		ActionLogWatcher: func(action codec.Action, msg string) {
+			log.Println("action: ", action.String(), msg)
+		},
 	}
 }

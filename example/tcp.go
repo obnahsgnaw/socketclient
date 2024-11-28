@@ -8,10 +8,7 @@ import (
 	"github.com/obnahsgnaw/socketclient/go/gateway"
 	gatewaypbv1 "github.com/obnahsgnaw/socketclient/go/gateway/gen/gateway/v1"
 	"github.com/obnahsgnaw/socketclient/go/security"
-	client2 "github.com/obnahsgnaw/socketutil/client"
 	"github.com/obnahsgnaw/socketutil/codec"
-	"go.uber.org/zap/zapcore"
-	"log"
 	"time"
 )
 
@@ -36,17 +33,6 @@ IwIDAQAB
 	dataType := codec.Proto
 
 	config := client.Default("127.0.0.1", 1811, dataType)
-	config.ServerLogWatcher = func(level zapcore.Level, msg string) {
-		log.Print("[", level.String(), "] ", msg)
-	}
-	config.ActionLogWatcher = func(action codec.Action, msg string) {
-		log.Println(action.String(), msg)
-	}
-	config.PackageLogWatcher = func(msgType client2.MsgType, msg string, pkg []byte) {
-		if msgType == client2.Send {
-			log.Println(msg, string(pkg))
-		}
-	}
 	conn := client.New(ctx, config)
 	securityServer := security.New(conn, pub,
 		security.Es(security2.Aes256, security2.CbcMode),
@@ -65,7 +51,7 @@ IwIDAQAB
 	gateway.New(conn,
 		gateway.Security(securityServer),
 		gateway.Auth(authServer),
-		gateway.Heartbeat(1*time.Second),
+		gateway.Heartbeat(time.Second),
 		gateway.Error(func(act uint32, status gatewaypbv1.GatewayError_Status) {
 			//
 		}),
