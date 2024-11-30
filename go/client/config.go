@@ -63,7 +63,7 @@ func Default(ip string, port int, dataType codec.Name) *Config {
 			log.Print("server: [", level.String(), "] ", msg)
 		},
 		PackageLogWatcher: func(msgType client.MsgType, msg string, pkg []byte) {
-			log.Println(msgType.String(), "package: ", msg, string(pkg))
+			//
 		},
 		ActionLogWatcher: func(action codec.Action, msg string) {
 			log.Println("action: ", action.String(), msg)

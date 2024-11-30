@@ -116,6 +116,10 @@ func (s *Server) Client() *client.Client {
 	return s.client
 }
 
+func (s *Server) Config() *client.Config {
+	return s.client.Config()
+}
+
 func (s *Server) Security() *security.Server {
 	return s.sec
 }
