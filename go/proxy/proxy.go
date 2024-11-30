@@ -95,7 +95,7 @@ func (s *Server) with(o ...Option) {
 
 // SendActionPackage SendRedirect Direct transparent transmission sends packets
 func (s *Server) SendActionPackage(act codec.ActionId, data []byte) (codec.ActionId, []byte, error) {
-	s.log("send action start, action=", act.String(), ",data=", string(data))
+	s.log("send action[", act.String(), "] start")
 	startTime := time.Now().UnixNano()
 	if err := s.init(); err != nil {
 		s.log("init failed, err=", err.Error())
@@ -231,7 +231,7 @@ func (s *Server) doAuth() (err error) {
 }
 
 func (s *Server) request(method string, url string, body []byte, init bool) (pkg []byte, err error) {
-	s.log("request start", " method=", method, " body=", string(body))
+	s.log("request start")
 	var resp *http.Response
 	if body, err = s.toProxyPackage(body, init); err != nil {
 		err = errors.New("encode proxy package failed, err=" + err.Error())
