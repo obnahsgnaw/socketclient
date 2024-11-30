@@ -5,6 +5,7 @@ import (
 	"github.com/obnahsgnaw/socketclient/go/auth"
 	gatewayv1 "github.com/obnahsgnaw/socketclient/go/gateway/gen/gateway/v1"
 	security2 "github.com/obnahsgnaw/socketclient/go/security"
+	"github.com/obnahsgnaw/socketutil/codec"
 )
 
 type Option func(*Server)
@@ -36,6 +37,18 @@ func Encoder(c security.Encoder) Option {
 func Encode(e bool) Option {
 	return func(s *Server) {
 		s.encode = e
+	}
+}
+
+func JsonProxy() Option {
+	return func(s *Server) {
+		s.proxyDataCoder = codec.NewJsonDataBuilder()
+	}
+}
+
+func ProtoProxy() Option {
+	return func(s *Server) {
+		s.proxyDataCoder = codec.NewProtobufDataBuilder()
 	}
 }
 
