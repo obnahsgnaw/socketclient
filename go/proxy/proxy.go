@@ -217,7 +217,7 @@ func (s *Server) doAuth() (err error) {
 			return errors.New("auth fail with response " + respAct.String())
 		}
 
-		var authResp *gatewayv1.AuthResponse
+		var authResp gatewayv1.AuthResponse
 		if err = s.dataCoder.Unpack(respData, &authResp); err != nil {
 			return errors.New("decode auth response failed, err=" + err.Error())
 		}
