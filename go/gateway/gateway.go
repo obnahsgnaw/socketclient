@@ -65,6 +65,7 @@ func (s *Server) start() {
 			s.client.Log(zapcore.ErrorLevel, "gateway: heartbeat init failed, err="+err.Error())
 		}
 	}
+	s.Ready()
 }
 
 func (s *Server) stop() {
