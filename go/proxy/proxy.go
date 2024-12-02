@@ -95,22 +95,21 @@ func (s *Server) with(o ...Option) {
 
 // SendActionPackage SendRedirect Direct transparent transmission sends packets
 func (s *Server) SendActionPackage(act codec.ActionId, data []byte) (codec.ActionId, []byte, error) {
-	s.log("send action[", act.String(), "] start")
 	startTime := time.Now().UnixNano()
 	if err := s.init(); err != nil {
-		s.log("init failed, err=", err.Error())
+		s.log("action[", act.String(), ":", "init failed, err=", err.Error())
 		return codec.ActionId(0), nil, err
 	}
 	respAct, respData, err := s.sendActionPackage(act, data)
 	if err != nil && !s.initialized { // try again
 		if err = s.init(); err != nil {
-			s.log("init failed, err=", err.Error())
+			s.log("action[", act.String(), ":", "init retry failed, err=", err.Error())
 			return codec.ActionId(0), nil, err
 		}
 		respAct, respData, err = s.sendActionPackage(act, data)
 	}
 	ttl := time.Now().UnixNano() - startTime
-	s.log("send action done, ttl=", showTime(time.Duration(ttl)))
+	s.log("action[", act.String(), ":", "done, ttl=", showTime(time.Duration(ttl)))
 	return respAct, respData, err
 }
 
@@ -167,8 +166,7 @@ func (s *Server) sendActionPackage(act codec.ActionId, data []byte) (respAct cod
 // Initialize data type, encryption and decryption, authentication, etc
 func (s *Server) init() error {
 	if !s.initialized {
-		s.log("init start")
-		if err := s.exchangeKey(); err != nil {
+		if err := s.authenticate(); err != nil {
 			return err
 		}
 		if err := s.doAuth(); err != nil {
@@ -179,8 +177,7 @@ func (s *Server) init() error {
 }
 
 // Exchange encryption and decryption keys,
-func (s *Server) exchangeKey() (err error) {
-	s.log("exchange security key start")
+func (s *Server) authenticate() (err error) {
 	s.esKey = s.es.Type().RandKey()
 	var pkg []byte
 	if len(s.target.PubCert) > 0 {
@@ -198,12 +195,11 @@ func (s *Server) exchangeKey() (err error) {
 		s.securityDisabled = respStatus == security2.SuccessWithoutSecurity
 		return nil
 	}
-	return errors.New("exchange key failed with: " + respStatus)
+	return errors.New("authenticate failed with: " + respStatus)
 }
 
 // Perform login authentication
 func (s *Server) doAuth() (err error) {
-	s.log("auth start")
 	if s.auth != nil && s.auth.AppId != "" && s.auth.Token != "" {
 		var data []byte
 		if data, err = s.dataCoder.Pack(&gatewayv1.AuthRequest{Token: utils.ToStr(s.auth.AppId, " ", s.auth.Token)}); err != nil {
@@ -231,7 +227,6 @@ func (s *Server) doAuth() (err error) {
 }
 
 func (s *Server) request(method string, url string, body []byte, init bool) (pkg []byte, err error) {
-	s.log("request start")
 	var resp *http.Response
 	if body, err = s.toProxyPackage(body, init); err != nil {
 		err = errors.New("encode proxy package failed, err=" + err.Error())
@@ -254,7 +249,7 @@ func (s *Server) request(method string, url string, body []byte, init bool) (pkg
 	if resp.StatusCode != http.StatusOK {
 		body, _ = io.ReadAll(resp.Body)
 		defer func(b io.ReadCloser) { _ = b.Close() }(resp.Body)
-		err = errors.New("request failed with " + resp.Status + ", body=" + string(body))
+		err = errors.New("request failed with " + resp.Status)
 		return
 	}
 	body, err = io.ReadAll(resp.Body)
@@ -286,7 +281,7 @@ func (s *Server) toProxyPackage(body []byte, init bool) ([]byte, error) {
 func (s *Server) parseProxyPackage(body []byte) ([]byte, error) {
 	pkg := proxyv1.SendResponse{}
 	if err := s.proxyDataCoder.Unpack(body, &pkg); err != nil {
-		return nil, errors.New("decode proxy response data failed, err=" + err.Error() + ", raw response is: " + string(body))
+		return nil, errors.New("decode proxy response data failed, err=" + err.Error())
 	}
 	return pkg.Package, nil
 }
