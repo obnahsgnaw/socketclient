@@ -17,7 +17,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -95,21 +94,16 @@ func (s *Server) with(o ...Option) {
 
 // SendActionPackage SendRedirect Direct transparent transmission sends packets
 func (s *Server) SendActionPackage(act codec.ActionId, data []byte) (codec.ActionId, []byte, error) {
-	startTime := time.Now().UnixNano()
 	if err := s.init(); err != nil {
-		s.log("action[", act.String(), ":", "init failed, err=", err.Error())
 		return codec.ActionId(0), nil, err
 	}
 	respAct, respData, err := s.sendActionPackage(act, data)
 	if err != nil && !s.initialized { // try again
 		if err = s.init(); err != nil {
-			s.log("action[", act.String(), ":", "init retry failed, err=", err.Error())
 			return codec.ActionId(0), nil, err
 		}
 		respAct, respData, err = s.sendActionPackage(act, data)
 	}
-	ttl := time.Now().UnixNano() - startTime
-	s.log("action[", act.String(), ":", "done, ttl=", showTime(time.Duration(ttl)))
 	return respAct, respData, err
 }
 
@@ -220,8 +214,6 @@ func (s *Server) doAuth() (err error) {
 		if !authResp.Success {
 			return errors.New("auth fail")
 		}
-	} else {
-		s.log("auth ignored without auth provide")
 	}
 	return nil
 }
@@ -286,32 +278,8 @@ func (s *Server) parseProxyPackage(body []byte) ([]byte, error) {
 	return pkg.Package, nil
 }
 
-func (s *Server) log(msg ...any) {
-	log.Print(msg...)
-}
-
 func toMd5(input string) string {
 	h := md5.New()
 	h.Write([]byte(input))
 	return hex.EncodeToString(h.Sum(nil))
-}
-
-func showTime(t time.Duration) string {
-	var unit string
-	var value float64
-	switch {
-	case t >= time.Second:
-		unit = "s"
-		value = float64(t) / float64(time.Second)
-	case t >= time.Millisecond:
-		unit = "ms"
-		value = float64(t) / float64(time.Millisecond)
-	case t >= time.Microsecond:
-		unit = "µs"
-		value = float64(t) / float64(time.Microsecond)
-	default:
-		unit = "ns"
-		value = float64(t)
-	}
-	return utils.ToStr(strconv.FormatFloat(value, 'f', -1, 64), " ", unit)
 }
