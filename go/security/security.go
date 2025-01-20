@@ -36,21 +36,17 @@ type Target struct {
 	PubCert []byte
 }
 
-func New(c *client.Client, o ...Option) *Server {
+func New(c *client.Client, target *Target, o ...Option) *Server {
 	s := &Server{
 		client: c,
 		rsa:    security.NewRsa(),
 		es:     security.NewEsCrypto(security.Aes256, security.CbcMode),
+		target: target,
 	}
 	s.with(o...)
 	s.withInterceptor()
 	c.WhenReady(s.start)
 	c.WhenPaused(s.stop)
-	if s.target == nil {
-		s.target = &Target{
-			Type: "user",
-		}
-	}
 	return s
 }
 
@@ -66,6 +62,10 @@ func (s *Server) start() {
 	s.client.Log(zapcore.InfoLevel, "security: init start")
 	s.esKey = s.es.Type().RandKey()
 	var encodeKey []byte
+	if s.target == nil {
+		s.client.Log(zapcore.ErrorLevel, "security: invalid target")
+		return
+	}
 	if len(s.target.PubCert) > 0 {
 		var err error
 		if encodeKey, err = BuildEsKeyPackage(s.rsa, s.target.PubCert, s.esKey, s.encode); err != nil {
