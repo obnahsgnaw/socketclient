@@ -26,7 +26,7 @@ type Server struct {
 
 func New(c *client.Client, auth *Auth, o ...Option) *Server {
 	s := &Server{client: c, auth: auth}
-	s.with(o...)
+	s.With(o...)
 	s.withAuth()
 	if s.sec != nil {
 		s.sec.WhenReady(s.start)
@@ -38,7 +38,7 @@ func New(c *client.Client, auth *Auth, o ...Option) *Server {
 	return s
 }
 
-func (s *Server) with(o ...Option) {
+func (s *Server) With(o ...Option) {
 	for _, fn := range o {
 		if fn != nil {
 			fn(s)

@@ -45,14 +45,14 @@ func New(c *client.Client, target *Target, o ...Option) *Server {
 		es:     esutil.New(esutil.Aes256, esutil.CbcMode),
 		target: target,
 	}
-	s.with(o...)
+	s.With(o...)
 	s.withInterceptor()
 	c.WhenReady(s.start)
 	c.WhenPaused(s.stop)
 	return s
 }
 
-func (s *Server) with(o ...Option) {
+func (s *Server) With(o ...Option) {
 	for _, fn := range o {
 		if fn != nil {
 			fn(s)
