@@ -8,11 +8,11 @@ import (
 	"time"
 )
 
-func BuildEsKeyPackage(rsa *rsautil.Rsa, publicKey, esKey []byte, encode bool) ([]byte, error) {
+func BuildEsKeyPackage(rsa *rsautil.Rsa, publicKey, esKey []byte) ([]byte, error) {
 	now := time.Now().Unix()
 	nowStr := strconv.FormatInt(now, 10)
 	timestampKey := append(esKey, []byte(nowStr)...)
-	return rsa.Encrypt(timestampKey, publicKey, encode)
+	return rsa.Encrypt(timestampKey, publicKey, true)
 }
 
 func AuthenticatePackage(typ, id string, dt codec.Name, pkg []byte) []byte {

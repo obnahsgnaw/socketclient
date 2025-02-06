@@ -177,7 +177,7 @@ func (s *Server) authenticate() (err error) {
 	s.esKey = s.es.Type().RandKey()
 	var pkg []byte
 	if len(s.target.PubCert) > 0 {
-		if pkg, err = security2.BuildEsKeyPackage(s.rsa, s.target.PubCert, s.esKey, s.encode); err != nil {
+		if pkg, err = security2.BuildEsKeyPackage(s.rsa, s.target.PubCert, s.esKey); err != nil {
 			return err
 		}
 	}

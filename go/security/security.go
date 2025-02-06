@@ -70,7 +70,7 @@ func (s *Server) start() {
 	}
 	if len(s.target.PubCert) > 0 {
 		var err error
-		if encodeKey, err = BuildEsKeyPackage(s.rsa, s.target.PubCert, s.esKey, s.encode); err != nil {
+		if encodeKey, err = BuildEsKeyPackage(s.rsa, s.target.PubCert, s.esKey); err != nil {
 			s.client.Log(zapcore.ErrorLevel, "security: rsa encrypt failed: "+err.Error())
 			s.failedCb(errors.New("rsa encrypt failed: " + err.Error()))
 		}
