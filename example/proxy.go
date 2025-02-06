@@ -1,7 +1,8 @@
 package main
 
 import (
-	security2 "github.com/obnahsgnaw/application/pkg/security"
+	"github.com/obnahsgnaw/goutils/security/coder"
+	"github.com/obnahsgnaw/goutils/security/esutil"
 	auth2 "github.com/obnahsgnaw/socketclient/go/auth"
 	"github.com/obnahsgnaw/socketclient/go/gateway/action"
 	gatewayv1 "github.com/obnahsgnaw/socketclient/go/gateway/gen/gateway/v1"
@@ -26,8 +27,8 @@ IwIDAQAB
 	proxy := proxy2.New("abc", "http://127.0.0.1:8028/v1/tcp-gw/proxy", codec.Json,
 		proxy2.Target(&security.Target{Type: "user", PubCert: pub}),
 		proxy2.Auth(auth),
-		proxy2.Es(security2.Aes256, security2.CbcMode),
-		proxy2.Encoder(security2.B64Encoding),
+		proxy2.Es(esutil.Aes256, esutil.CbcMode),
+		proxy2.Encoder(coder.B64StdEncoding),
 		proxy2.Encode(true),
 		proxy2.GatewayErrHandler(func(status gatewayv1.GatewayError_Status, triggerId uint32) {
 			log.Println("gateway error:", status, " of action ", triggerId)

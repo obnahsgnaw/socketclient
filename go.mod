@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/envoyproxy/protoc-gen-validate v1.0.4
 	github.com/obnahsgnaw/application v0.17.16
+	github.com/obnahsgnaw/goutils v0.9.2
 	github.com/obnahsgnaw/socketutil v0.8.10
 	go.uber.org/zap v1.23.0
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c

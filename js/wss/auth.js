@@ -1,3 +1,4 @@
+var auth = import('proto/gateway/v1/auth_pb')
 class Auth{
     /**
      *
@@ -18,6 +19,7 @@ class Auth{
         this.client.log("auth start")
         // this.client.SendMessage()
         this.ready()
+        var pkg = new auth.AuthRequest()
     }
     stop(){
         this.client.log("auth stop")

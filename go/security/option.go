@@ -1,25 +1,25 @@
 package security
 
 import (
-	"github.com/obnahsgnaw/application/pkg/security"
+	"github.com/obnahsgnaw/goutils/security/coder"
+	"github.com/obnahsgnaw/goutils/security/esutil"
 )
 
 type Option func(*Server)
 
-func Es(tp security.EsType, m security.EsMode) Option {
+func Es(tp esutil.EsType, m esutil.EsMode) Option {
 	return func(s *Server) {
 		if tp > 0 {
-			s.es = security.NewEsCrypto(tp, m)
-			s.es.SetEncoder(s.encoder)
+			s.es = esutil.New(tp, m, esutil.Encoder(s.encoder))
 		}
 	}
 }
 
-func Encoder(c security.Encoder) Option {
+func Encoder(c coder.Encoder) Option {
 	return func(s *Server) {
 		if c != nil {
 			s.encoder = c
-			s.es.SetEncoder(c)
+			s.es = esutil.New(s.es.Type(), s.es.Mode(), esutil.Encoder(s.encoder))
 		}
 	}
 }

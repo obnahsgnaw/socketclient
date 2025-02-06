@@ -2,17 +2,17 @@ package security
 
 import (
 	"errors"
-	"github.com/obnahsgnaw/application/pkg/security"
+	"github.com/obnahsgnaw/goutils/security/esutil"
 )
 
 type Interceptor struct {
 	disabled func() bool
-	es       func() *security.EsCrypto
+	es       func() *esutil.ADes
 	esKey    func() []byte
 	encode   func() bool
 }
 
-func NewInterceptor(es func() *security.EsCrypto, esKey func() []byte, encode func() bool, disabled func() bool) *Interceptor {
+func NewInterceptor(es func() *esutil.ADes, esKey func() []byte, encode func() bool, disabled func() bool) *Interceptor {
 	return &Interceptor{
 		disabled: disabled,
 		es:       es,

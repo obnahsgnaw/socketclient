@@ -5,8 +5,10 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
-	"github.com/obnahsgnaw/application/pkg/security"
 	"github.com/obnahsgnaw/application/pkg/utils"
+	"github.com/obnahsgnaw/goutils/security/coder"
+	"github.com/obnahsgnaw/goutils/security/esutil"
+	"github.com/obnahsgnaw/goutils/security/rsautil"
 	"github.com/obnahsgnaw/socketclient/go/auth"
 	"github.com/obnahsgnaw/socketclient/go/client"
 	"github.com/obnahsgnaw/socketclient/go/gateway/action"
@@ -24,9 +26,9 @@ type Server struct {
 	client            *http.Client
 	dataType          codec.Name
 	auth              *auth.Auth
-	rsa               *security.RsaCrypto
-	es                *security.EsCrypto
-	encoder           security.Encoder
+	rsa               *rsautil.Rsa
+	es                *esutil.ADes
+	encoder           coder.Encoder
 	gatewayPkgCoder   codec.PkgBuilder
 	dataCoder         codec.DataBuilder
 	proxyDataCoder    codec.DataBuilder
@@ -51,9 +53,9 @@ func New(clientId, proxyUrl string, dataType codec.Name, o ...Option) *Server {
 			Timeout: 30 * time.Second,
 		},
 		dataType:        dataType,
-		rsa:             security.NewRsa(),
-		es:              security.NewEsCrypto(security.Aes256, security.CbcMode),
-		encoder:         security.B64Encoding,
+		rsa:             rsautil.New(),
+		es:              esutil.New(esutil.Aes256, esutil.CbcMode),
+		encoder:         coder.B64StdEncoding,
 		gatewayPkgCoder: gatewayPkgCoder,
 		dataCoder:       dataCoder,
 		proxyDataCoder:  codec.NewProtobufDataBuilder(),
@@ -65,7 +67,7 @@ func New(clientId, proxyUrl string, dataType codec.Name, o ...Option) *Server {
 		s.target = &security2.Target{Type: "user"}
 	}
 	s.interceptor = security2.NewInterceptor(
-		func() *security.EsCrypto {
+		func() *esutil.ADes {
 			return s.es
 		},
 		func() []byte {

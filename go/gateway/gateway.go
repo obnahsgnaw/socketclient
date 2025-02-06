@@ -3,7 +3,8 @@ package gateway
 import (
 	"context"
 	"errors"
-	security2 "github.com/obnahsgnaw/application/pkg/security"
+	"github.com/obnahsgnaw/goutils/security/coder"
+	"github.com/obnahsgnaw/goutils/security/esutil"
 	"github.com/obnahsgnaw/socketclient/go/auth"
 	"github.com/obnahsgnaw/socketclient/go/base"
 	"github.com/obnahsgnaw/socketclient/go/client"
@@ -140,8 +141,8 @@ func Default(ctx context.Context, ip string, port int, dataType codec.Name, targ
 	config := client.Default(ip, port, dataType)
 	conn := client.New(ctx, config)
 	securityServer := security.New(conn, target,
-		security.Es(security2.Aes256, security2.CbcMode),
-		security.Encoder(security2.B64Encoding),
+		security.Es(esutil.Aes256, esutil.CbcMode),
+		security.Encoder(coder.B64StdEncoding),
 		security.Encode(true),
 		security.Failed(func(err error) {
 			//

@@ -1,26 +1,11 @@
-import {WebSocket} from "ws";
+// import {Client} from "./client.js";
 // 创建一个 WebSocket 连接
-const socket = new WebSocket('ws://127.0.0.1:1803');
+// const conn = new Client('ws://127.0.0.1:28088/wss');
 
-// 当连接打开时触发
-socket.addEventListener('open', () => {
-    console.log('WebSocket connection opened');
+// conn.Start()
+import rq from  'proto/auth.js'
+let pkg = rq()
+pkg.setToken("xcx")
 
-    // 发送消息
-    socket.send('Hello from client!');
-});
-
-// 当收到消息时触发
-socket.addEventListener('message', (event) => {
-    console.log('Received message: ', event.data);
-});
-
-// 当连接关闭时触发
-socket.addEventListener('close', () => {
-    console.log('WebSocket connection closed');
-});
-
-// 当连接发生错误时触发
-socket.addEventListener('error', (error) => {
-    console.error('WebSocket error: ', error);
-});
+console.log(pkg)
+console.log(pkg.serializeBinary())

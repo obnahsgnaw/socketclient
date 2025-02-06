@@ -2,7 +2,9 @@ package security
 
 import (
 	"errors"
-	"github.com/obnahsgnaw/application/pkg/security"
+	"github.com/obnahsgnaw/goutils/security/coder"
+	"github.com/obnahsgnaw/goutils/security/esutil"
+	"github.com/obnahsgnaw/goutils/security/rsautil"
 	"github.com/obnahsgnaw/socketclient/go/base"
 	"github.com/obnahsgnaw/socketclient/go/client"
 	client2 "github.com/obnahsgnaw/socketutil/service/client"
@@ -19,9 +21,9 @@ const (
 type Server struct {
 	base.Server
 	client      *client.Client
-	rsa         *security.RsaCrypto
-	es          *security.EsCrypto
-	encoder     security.Encoder
+	rsa         *rsautil.Rsa
+	es          *esutil.ADes
+	encoder     coder.Encoder
 	encode      bool
 	esKey       []byte
 	initialized bool
@@ -39,8 +41,8 @@ type Target struct {
 func New(c *client.Client, target *Target, o ...Option) *Server {
 	s := &Server{
 		client: c,
-		rsa:    security.NewRsa(),
-		es:     security.NewEsCrypto(security.Aes256, security.CbcMode),
+		rsa:    rsautil.New(),
+		es:     esutil.New(esutil.Aes256, esutil.CbcMode),
 		target: target,
 	}
 	s.with(o...)
@@ -107,7 +109,7 @@ func (s *Server) withInterceptor() {
 		}
 		return nil
 	}))
-	s.client.Client().With(client2.GatewayPkgInterceptor(NewInterceptor(func() *security.EsCrypto {
+	s.client.Client().With(client2.GatewayPkgInterceptor(NewInterceptor(func() *esutil.ADes {
 		return s.es
 	}, func() []byte {
 		return s.esKey

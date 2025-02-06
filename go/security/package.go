@@ -1,14 +1,14 @@
 package security
 
 import (
-	"github.com/obnahsgnaw/application/pkg/security"
 	"github.com/obnahsgnaw/application/pkg/utils"
+	"github.com/obnahsgnaw/goutils/security/rsautil"
 	"github.com/obnahsgnaw/socketutil/codec"
 	"strconv"
 	"time"
 )
 
-func BuildEsKeyPackage(rsa *security.RsaCrypto, publicKey, esKey []byte, encode bool) ([]byte, error) {
+func BuildEsKeyPackage(rsa *rsautil.Rsa, publicKey, esKey []byte, encode bool) ([]byte, error) {
 	now := time.Now().Unix()
 	nowStr := strconv.FormatInt(now, 10)
 	timestampKey := append(esKey, []byte(nowStr)...)
