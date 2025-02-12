@@ -1,7 +1,7 @@
 package client
 
 import (
-	gatewayv1 "github.com/obnahsgnaw/socketclient/go/gateway/gen/gateway/v1"
+	gatewayv1 "github.com/obnahsgnaw/socketgateway/service/proto/gen/gateway/v1"
 	"github.com/obnahsgnaw/socketutil/client"
 	"github.com/obnahsgnaw/socketutil/codec"
 	"go.uber.org/zap/zapcore"

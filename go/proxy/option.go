@@ -4,8 +4,8 @@ import (
 	"github.com/obnahsgnaw/goutils/security/coder"
 	"github.com/obnahsgnaw/goutils/security/esutil"
 	"github.com/obnahsgnaw/socketclient/go/auth"
-	gatewayv1 "github.com/obnahsgnaw/socketclient/go/gateway/gen/gateway/v1"
 	"github.com/obnahsgnaw/socketclient/go/security"
+	gatewayv1 "github.com/obnahsgnaw/socketgateway/service/proto/gen/gateway/v1"
 	"github.com/obnahsgnaw/socketutil/codec"
 )
 

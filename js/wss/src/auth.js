@@ -1,4 +1,4 @@
-var auth = import('proto/gateway/v1/auth_pb')
+var auth = import('proto/gateway/v1/auth_pb.js')
 class Auth{
     /**
      *

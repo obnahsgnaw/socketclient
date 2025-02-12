@@ -5,9 +5,9 @@ import (
 	"github.com/obnahsgnaw/goutils/security/esutil"
 	auth2 "github.com/obnahsgnaw/socketclient/go/auth"
 	"github.com/obnahsgnaw/socketclient/go/gateway/action"
-	gatewayv1 "github.com/obnahsgnaw/socketclient/go/gateway/gen/gateway/v1"
 	proxy2 "github.com/obnahsgnaw/socketclient/go/proxy"
 	"github.com/obnahsgnaw/socketclient/go/security"
+	gatewayv1 "github.com/obnahsgnaw/socketgateway/service/proto/gen/gateway/v1"
 	"github.com/obnahsgnaw/socketutil/codec"
 	"log"
 )

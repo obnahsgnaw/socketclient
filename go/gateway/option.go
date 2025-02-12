@@ -2,8 +2,8 @@ package gateway
 
 import (
 	"github.com/obnahsgnaw/socketclient/go/auth"
-	gatewayv1 "github.com/obnahsgnaw/socketclient/go/gateway/gen/gateway/v1"
 	"github.com/obnahsgnaw/socketclient/go/security"
+	gatewayv1 "github.com/obnahsgnaw/socketgateway/service/proto/gen/gateway/v1"
 	"time"
 )
 

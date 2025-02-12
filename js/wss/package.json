@@ -1,9 +1,11 @@
 {
-  "name": "wss",
+  "name": "@obnash/wss",
   "version": "1.0.0",
   "description": "wss",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "src/index.d.ts",
   "scripts": {
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -18,5 +20,8 @@
     "protocol-buffers-encodings": "^1.2.0",
     "ws": "^8.18.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "typescript": "^5.7.3"
+  }
 }
