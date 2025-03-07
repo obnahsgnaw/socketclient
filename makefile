@@ -1,11 +1,7 @@
 .PHONY: all
-all: gateway proxy
+all: proxy
 
-.PHONY: gateway
-gateway:
-	@ cd go/gateway/proto && buf generate
-	@ echo "generated gateway proto"
 .PHONY: proxy
 proxy:
-	@ cd go/proxy/proto && buf generate
+	@ cd go/proxy/proto && buf lint apis --error-format=json && buf generate --template buf.gen.yaml
 	@ echo "generated proxy proto"

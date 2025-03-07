@@ -6,6 +6,7 @@ import (
 	"github.com/obnahsgnaw/socketutil/codec"
 	"go.uber.org/zap/zapcore"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -21,6 +22,8 @@ type Config struct {
 	ServerLogWatcher  func(level zapcore.Level, msg string)
 	PackageLogWatcher func(msgType client.MsgType, msg string, pkg []byte)
 	ActionLogWatcher  func(action codec.Action, msg string)
+	Network           string
+	Path              string
 }
 
 func ToData(pkg *codec.PKG) codec.DataPtr {
@@ -60,7 +63,7 @@ func Default(ip string, port int, dataType codec.Name) *Config {
 		KeepaliveInterval: time.Second * 5,
 		Timeout:           time.Second * 5,
 		ServerLogWatcher: func(level zapcore.Level, msg string) {
-			log.Print("server: [", level.String(), "] ", msg)
+			log.Print("server: [", PadLen(level.String(), 5), "] ", msg)
 		},
 		PackageLogWatcher: func(msgType client.MsgType, msg string, pkg []byte) {
 			//
@@ -68,5 +71,43 @@ func Default(ip string, port int, dataType codec.Name) *Config {
 		ActionLogWatcher: func(action codec.Action, msg string) {
 			log.Println("action: ", action.String(), msg)
 		},
+		Network: "tcp",
 	}
+}
+
+func WsDefault(ip string, port int, dataType codec.Name) *Config {
+	protocolCoder := codec.NewWebsocketCodec()
+	gatewayPkgCoder := codec.NewJsonPackageBuilder(ToData, ToPkg)
+	dataCoder := codec.NewJsonDataBuilder()
+	if dataType != codec.Json {
+		dataCoder = codec.NewProtobufDataBuilder()
+	}
+	return &Config{
+		Ip:                ip,
+		Port:              port,
+		ProtocolCoder:     protocolCoder,
+		DataCoder:         dataCoder,
+		GatewayPkgCoder:   gatewayPkgCoder,
+		RetryInterval:     time.Second * 10,
+		KeepaliveInterval: time.Second * 5,
+		Timeout:           time.Second * 5,
+		ServerLogWatcher: func(level zapcore.Level, msg string) {
+			log.Print("server: [", PadLen(level.String(), 5), "] ", msg)
+		},
+		PackageLogWatcher: func(msgType client.MsgType, msg string, pkg []byte) {
+			//
+		},
+		ActionLogWatcher: func(action codec.Action, msg string) {
+			log.Println("action: ", action.String(), msg)
+		},
+		Network: "ws",
+		Path:    "/wss",
+	}
+}
+
+func PadLen(str string, max int) string {
+	if sp := max - len(str); sp > 0 {
+		str = str + strings.Repeat(" ", sp)
+	}
+	return str
 }

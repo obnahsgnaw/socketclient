@@ -163,3 +163,30 @@ func Default(ctx context.Context, ip string, port int, dataType codec.Name, targ
 		}),
 	)
 }
+
+func WsDefault(ctx context.Context, ip string, port int, dataType codec.Name, target *security.Target) *Server {
+	config := client.WsDefault(ip, port, dataType)
+	conn := client.New(ctx, config)
+	securityServer := security.New(conn, target,
+		security.Es(esutil.Aes256, esutil.CbcMode),
+		security.Encoder(coder.B64StdEncoding),
+		security.Encode(true),
+		security.Failed(func(err error) {
+			//
+		}),
+	)
+	authServer := auth.New(conn, nil,
+		auth.Security(securityServer),
+		auth.Failed(func(a *auth.Auth) {
+			//
+		}),
+	)
+	return New(conn,
+		Security(securityServer),
+		Auth(authServer),
+		Heartbeat(time.Second),
+		Error(func(act uint32, status gatewayv1.GatewayError_Status) {
+			//
+		}),
+	)
+}

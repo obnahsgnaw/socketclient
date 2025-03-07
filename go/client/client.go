@@ -16,7 +16,7 @@ type Client struct {
 }
 
 func New(ctx context.Context, cc *Config) *Client {
-	c := client.New(ctx, "tcp", cc.Ip+":"+strconv.Itoa(cc.Port), cc.ProtocolCoder, cc.GatewayPkgCoder, cc.DataCoder)
+	c := client.New(ctx, cc.Network, cc.Ip+":"+strconv.Itoa(cc.Port)+cc.Path, cc.ProtocolCoder, cc.GatewayPkgCoder, cc.DataCoder)
 	s := &Client{
 		ctx:    ctx,
 		client: c,
