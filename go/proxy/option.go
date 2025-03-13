@@ -62,7 +62,7 @@ func GatewayErrHandler(f func(status gatewayv1.GatewayError_Status, triggerId ui
 
 func Target(target *security.Target) Option {
 	return func(s *Server) {
-		if s.target != nil {
+		if target != nil {
 			s.target = target
 			if s.target.Type == "" {
 				s.target.Type = "user"
