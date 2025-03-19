@@ -1,15 +1,10 @@
 package gateway
 
 import (
-	"context"
 	"errors"
-	"github.com/obnahsgnaw/goutils/security/coder"
-	"github.com/obnahsgnaw/goutils/security/esutil"
-	"github.com/obnahsgnaw/socketclient/go/auth"
 	"github.com/obnahsgnaw/socketclient/go/base"
 	"github.com/obnahsgnaw/socketclient/go/client"
 	"github.com/obnahsgnaw/socketclient/go/gateway/action"
-	"github.com/obnahsgnaw/socketclient/go/security"
 	gatewayv1 "github.com/obnahsgnaw/socketgateway/service/proto/gen/gateway/v1"
 	"github.com/obnahsgnaw/socketutil/codec"
 	"go.uber.org/zap/zapcore"
@@ -20,31 +15,22 @@ import (
 var HeartbeatMin = 5 * time.Second // 最小 5 秒
 
 type Server struct {
-	base.Server
-	client            *client.Client
-	sec               *security.Server
-	auth              *auth.Server
+	rdServer base.Server
+	client.Clienter
 	heartbeatInterval time.Duration
 	errorCb           func(act uint32, status gatewayv1.GatewayError_Status)
 }
 
-func New(c *client.Client, o ...Option) *Server {
+func New(c client.Clienter, o ...Option) *Server {
 	s := &Server{
-		client:            c,
+		Clienter:          c,
+		rdServer:          base.Server{},
 		heartbeatInterval: 10 * time.Second,
 	}
 	s.with(o...)
 	s.withGatewayError()
-	if s.auth != nil {
-		s.auth.WhenReady(s.start)
-		s.auth.WhenPaused(s.stop)
-	} else if s.sec != nil {
-		s.sec.WhenReady(s.start)
-		s.sec.WhenPaused(s.stop)
-	} else {
-		s.client.WhenReady(s.start)
-		s.client.WhenPaused(s.stop)
-	}
+	c.WhenReady(s.start)
+	c.WhenPaused(s.stop)
 
 	return s
 }
@@ -58,53 +44,53 @@ func (s *Server) with(o ...Option) {
 }
 
 func (s *Server) start() {
-	s.client.Log(zapcore.InfoLevel, "gateway: start")
+	s.Log(zapcore.InfoLevel, "gateway start")
 
 	if s.heartbeatInterval > 0 {
-		s.client.Log(zapcore.InfoLevel, "gateway: withed heartbeat")
+		s.Log(zapcore.InfoLevel, "gateway withed heartbeat")
 		if err := s.withHeartbeat(); err != nil {
-			s.client.Log(zapcore.ErrorLevel, "gateway: heartbeat init failed, err="+err.Error())
+			s.Log(zapcore.ErrorLevel, "gateway heartbeat init failed, err="+err.Error())
 		}
 	}
-	s.Ready()
+	s.rdServer.Ready()
 }
 
 func (s *Server) stop() {
-	s.client.Log(zapcore.InfoLevel, "gateway: stop")
-	s.Pause()
+	s.Log(zapcore.InfoLevel, "gateway stop")
+	s.rdServer.Pause()
 }
 
 func (s *Server) PauseHeartbeat() {
-	s.client.Client().HeartbeatPause()
+	s.Client().HeartbeatPause()
 }
 
 func (s *Server) ContinueHeartbeat() {
-	s.client.Client().HeartbeatContinue()
+	s.Client().HeartbeatContinue()
 }
 
 func (s *Server) withHeartbeat() error {
-	s.client.Client().Listen(action.PoneAction, func() codec.DataPtr {
+	s.Client().Listen(action.PoneAction, func() codec.DataPtr {
 		return &gatewayv1.PongResponse{}
 	}, func(rqData codec.DataPtr) (respAction codec.Action, respData codec.DataPtr) {
 		data := rqData.(*gatewayv1.PongResponse)
-		s.client.Log(zapcore.DebugLevel, "gateway: received pone, server time="+data.Timestamp.AsTime().String())
+		s.Log(zapcore.DebugLevel, "gateway received pone, server time="+data.Timestamp.AsTime().String())
 		return
 	})
-	b, err := s.client.Client().Pack(action.PingAction, &gatewayv1.PingRequest{})
+	b, err := s.Client().Pack(action.PingAction, &gatewayv1.PingRequest{})
 	if err != nil {
-		return errors.New("gateway: pack ping package failed,err=" + err.Error())
+		return errors.New("gateway pack ping package failed,err=" + err.Error())
 	}
-	s.client.Client().Heartbeat(b, s.heartbeatInterval)
+	s.Client().Heartbeat(b, s.heartbeatInterval)
 	return nil
 }
 
 func (s *Server) withGatewayError() {
-	s.client.Client().Listen(action.PkgErrRespAction, func() codec.DataPtr {
+	s.Client().Listen(action.PkgErrRespAction, func() codec.DataPtr {
 		return &gatewayv1.GatewayError{}
 	}, func(rqData codec.DataPtr) (respAction codec.Action, respData codec.DataPtr) {
 		data := rqData.(*gatewayv1.GatewayError)
 		if data.Status != gatewayv1.GatewayError_None {
-			s.client.Log(zapcore.ErrorLevel, "gateway: received gateway error: triggered action="+strconv.Itoa(int(data.TriggerAction))+",err="+data.Status.String())
+			s.Log(zapcore.ErrorLevel, "gateway received gateway error: triggered action="+strconv.Itoa(int(data.TriggerAction))+",err="+data.Status.String())
 			if s.errorCb != nil {
 				s.errorCb(data.TriggerAction, data.Status)
 			}
@@ -113,80 +99,12 @@ func (s *Server) withGatewayError() {
 	})
 }
 
-func (s *Server) Client() *client.Client {
-	return s.client
+// WhenReady Callback handler after the service is ready
+func (s *Server) WhenReady(cb func()) {
+	s.rdServer.WhenReady(cb)
 }
 
-func (s *Server) Config() *client.Config {
-	return s.client.Config()
-}
-
-func (s *Server) Security() *security.Server {
-	return s.sec
-}
-
-func (s *Server) Auth() *auth.Server {
-	return s.auth
-}
-
-func (s *Server) Start() {
-	s.Client().Start()
-}
-
-func (s *Server) Stop() {
-	s.Client().Stop()
-}
-
-func Default(ctx context.Context, ip string, port int, dataType codec.Name, target *security.Target) *Server {
-	config := client.Default(ip, port, dataType)
-	conn := client.New(ctx, config)
-	securityServer := security.New(conn, target,
-		security.Es(esutil.Aes256, esutil.CbcMode),
-		security.Encoder(coder.B64StdEncoding),
-		security.Encode(true),
-		security.Failed(func(err error) {
-			//
-		}),
-	)
-	authServer := auth.New(conn, nil,
-		auth.Security(securityServer),
-		auth.Failed(func(a *auth.Auth) {
-			//
-		}),
-	)
-	return New(conn,
-		Security(securityServer),
-		Auth(authServer),
-		Heartbeat(time.Second),
-		Error(func(act uint32, status gatewayv1.GatewayError_Status) {
-			//
-		}),
-	)
-}
-
-func WsDefault(ctx context.Context, ip string, port int, dataType codec.Name, target *security.Target) *Server {
-	config := client.WsDefault(ip, port, dataType)
-	conn := client.New(ctx, config)
-	securityServer := security.New(conn, target,
-		security.Es(esutil.Aes256, esutil.CbcMode),
-		security.Encoder(coder.B64StdEncoding),
-		security.Encode(true),
-		security.Failed(func(err error) {
-			//
-		}),
-	)
-	authServer := auth.New(conn, nil,
-		auth.Security(securityServer),
-		auth.Failed(func(a *auth.Auth) {
-			//
-		}),
-	)
-	return New(conn,
-		Security(securityServer),
-		Auth(authServer),
-		Heartbeat(time.Second),
-		Error(func(act uint32, status gatewayv1.GatewayError_Status) {
-			//
-		}),
-	)
+// WhenPaused Callback handler after the service is suspended
+func (s *Server) WhenPaused(cb func()) {
+	s.rdServer.WhenPaused(cb)
 }

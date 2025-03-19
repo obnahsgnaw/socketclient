@@ -19,8 +19,8 @@ const (
 
 // Server Gateway Security Control Service
 type Server struct {
-	base.Server
-	client      *client.Client
+	client.Clienter
+	rdServer    base.Server
 	rsa         *rsautil.Rsa
 	es          *esutil.ADes
 	encoder     coder.Encoder
@@ -38,21 +38,22 @@ type Target struct {
 	PubCert []byte
 }
 
-func New(c *client.Client, target *Target, o ...Option) *Server {
+func New(c client.Clienter, target *Target, o ...Option) *Server {
 	s := &Server{
-		client: c,
-		rsa:    rsautil.New(),
-		es:     esutil.New(esutil.Aes256, esutil.CbcMode),
-		target: target,
+		Clienter: c,
+		rdServer: base.Server{},
+		rsa:      rsautil.New(),
+		es:       esutil.New(esutil.Aes256, esutil.CbcMode),
+		target:   target,
 	}
-	s.With(o...)
+	s.with(o...)
 	s.withInterceptor()
 	c.WhenReady(s.start)
 	c.WhenPaused(s.stop)
 	return s
 }
 
-func (s *Server) With(o ...Option) {
+func (s *Server) with(o ...Option) {
 	for _, fn := range o {
 		if fn != nil {
 			fn(s)
@@ -61,37 +62,37 @@ func (s *Server) With(o ...Option) {
 }
 
 func (s *Server) start() {
-	s.client.Log(zapcore.InfoLevel, "security: init start")
+	s.Log(zapcore.InfoLevel, "security init start")
 	s.esKey = s.es.Type().RandKey()
 	var encodeKey []byte
 	if s.target == nil {
-		s.client.Log(zapcore.ErrorLevel, "security: invalid target")
+		s.Log(zapcore.ErrorLevel, "security invalid target")
 		return
 	}
 	if len(s.target.PubCert) > 0 {
 		var err error
 		if encodeKey, err = BuildEsKeyPackage(s.rsa, s.target.PubCert, s.esKey); err != nil {
-			s.client.Log(zapcore.ErrorLevel, "security: rsa encrypt failed: "+err.Error())
+			s.Log(zapcore.ErrorLevel, "security rsa encrypt failed: "+err.Error())
 			s.failedCb(errors.New("rsa encrypt failed: " + err.Error()))
 		}
 	}
-	encodeKey = AuthenticatePackage(s.target.Type, s.target.Id, s.client.Config().DataCoder.Name(), encodeKey)
+	encodeKey = AuthenticatePackage(s.target.Type, s.target.Id, s.Config().DataCoder.Name(), encodeKey)
 
-	if err := s.client.Client().SendRaw(encodeKey); err != nil {
-		s.client.Log(zapcore.ErrorLevel, "security: send initialize package failed: "+err.Error())
+	if err := s.Client().SendRaw(encodeKey); err != nil {
+		s.Log(zapcore.ErrorLevel, "security send initialize package failed: "+err.Error())
 		s.failedCb(errors.New("send initialize package failed: " + err.Error()))
 	}
 }
 
 func (s *Server) stop() {
-	s.client.Log(zapcore.InfoLevel, "security: stop")
-	s.Pause()
+	s.Log(zapcore.InfoLevel, "security stop")
+	s.rdServer.Pause()
 	s.initialized = false
 	s.disabled = false
 }
 
 func (s *Server) withInterceptor() {
-	s.client.Client().With(client2.ListenInterceptor(func(bytes []byte) []byte {
+	s.Client().With(client2.ListenInterceptor(func(bytes []byte) []byte {
 		if s.initialized {
 			return bytes
 		}
@@ -99,17 +100,17 @@ func (s *Server) withInterceptor() {
 		if bStr == SuccessWithoutSecurity || bStr == SuccessWithSecurity {
 			s.initialized = true
 			s.disabled = bStr == SuccessWithoutSecurity
-			s.client.Log(zapcore.InfoLevel, "security: init success")
-			s.Ready()
+			s.Log(zapcore.InfoLevel, "security init success")
+			s.rdServer.Ready()
 			return nil
 		}
 		if s.failedCb != nil {
-			s.client.Log(zapcore.ErrorLevel, "security: init failed with response: "+bStr)
+			s.Log(zapcore.ErrorLevel, "security init failed with response: "+bStr)
 			s.failedCb(errors.New("init failed with response: " + bStr))
 		}
 		return nil
 	}))
-	s.client.Client().With(client2.GatewayPkgInterceptor(NewInterceptor(func() *esutil.ADes {
+	s.Client().With(client2.GatewayPkgInterceptor(NewInterceptor(func() *esutil.ADes {
 		return s.es
 	}, func() []byte {
 		return s.esKey
@@ -118,4 +119,14 @@ func (s *Server) withInterceptor() {
 	}, func() bool {
 		return s.disabled
 	})))
+}
+
+// WhenReady Callback handler after the service is ready
+func (s *Server) WhenReady(cb func()) {
+	s.rdServer.WhenReady(cb)
+}
+
+// WhenPaused Callback handler after the service is suspended
+func (s *Server) WhenPaused(cb func()) {
+	s.rdServer.WhenPaused(cb)
 }

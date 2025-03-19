@@ -24,13 +24,13 @@ func New(ctx context.Context, cc *Config) *Client {
 	}
 	c.With(client.Connect(func(index int) {
 		if s.config.ServerLogWatcher != nil {
-			s.config.ServerLogWatcher(zapcore.InfoLevel, "connected")
+			s.config.ServerLogWatcher(zapcore.InfoLevel, "client connected")
 		}
 		s.Ready()
 	}))
 	c.With(client.Disconnect(func(index int) {
 		if s.config.ServerLogWatcher != nil {
-			s.config.ServerLogWatcher(zapcore.InfoLevel, "disconnected")
+			s.config.ServerLogWatcher(zapcore.InfoLevel, "client disconnected")
 		}
 		s.Pause()
 	}))

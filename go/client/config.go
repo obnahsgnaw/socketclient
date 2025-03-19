@@ -1,12 +1,12 @@
 package client
 
 import (
+	"github.com/obnahsgnaw/goutils/strutil"
 	gatewayv1 "github.com/obnahsgnaw/socketgateway/service/proto/gen/gateway/v1"
 	"github.com/obnahsgnaw/socketutil/client"
 	"github.com/obnahsgnaw/socketutil/codec"
 	"go.uber.org/zap/zapcore"
 	"log"
-	"strings"
 	"time"
 )
 
@@ -36,6 +36,7 @@ func ToData(pkg *codec.PKG) codec.DataPtr {
 		Data:   pkg.Data,
 	}
 }
+
 func ToPkg(ptr codec.DataPtr) *codec.PKG {
 	p := ptr.(*gatewayv1.GatewayPackage)
 	return &codec.PKG{
@@ -63,7 +64,7 @@ func Default(ip string, port int, dataType codec.Name) *Config {
 		KeepaliveInterval: time.Second * 5,
 		Timeout:           time.Second * 5,
 		ServerLogWatcher: func(level zapcore.Level, msg string) {
-			log.Print("server: [", PadLen(level.String(), 5), "] ", msg)
+			log.Print("server: [", strutil.PadLen(level.String(), 5), "] ", msg)
 		},
 		PackageLogWatcher: func(msgType client.MsgType, msg string, pkg []byte) {
 			//
@@ -92,7 +93,7 @@ func WsDefault(ip string, port int, dataType codec.Name) *Config {
 		KeepaliveInterval: time.Second * 5,
 		Timeout:           time.Second * 5,
 		ServerLogWatcher: func(level zapcore.Level, msg string) {
-			log.Print("server: [", PadLen(level.String(), 5), "] ", msg)
+			log.Print("server: [", strutil.PadLen(level.String(), 5), "] ", msg)
 		},
 		PackageLogWatcher: func(msgType client.MsgType, msg string, pkg []byte) {
 			//
@@ -103,11 +104,4 @@ func WsDefault(ip string, port int, dataType codec.Name) *Config {
 		Network: "ws",
 		Path:    "/wss",
 	}
-}
-
-func PadLen(str string, max int) string {
-	if sp := max - len(str); sp > 0 {
-		str = str + strings.Repeat(" ", sp)
-	}
-	return str
 }
