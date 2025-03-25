@@ -78,10 +78,11 @@ func Default(ip string, port int, dataType codec.Name) *Config {
 
 func WsDefault(ip string, port int, dataType codec.Name) *Config {
 	protocolCoder := codec.NewWebsocketCodec()
-	gatewayPkgCoder := codec.NewJsonPackageBuilder(ToData, ToPkg)
+	var gatewayPkgCoder codec.PkgBuilder = codec.NewJsonPackageBuilder(ToData, ToPkg)
 	dataCoder := codec.NewJsonDataBuilder()
 	if dataType != codec.Json {
 		dataCoder = codec.NewProtobufDataBuilder()
+		gatewayPkgCoder = codec.NewProtobufPackageBuilder(ToData, ToPkg)
 	}
 	return &Config{
 		Ip:                ip,
