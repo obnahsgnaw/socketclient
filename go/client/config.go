@@ -7,12 +7,15 @@ import (
 	"github.com/obnahsgnaw/socketutil/codec"
 	"go.uber.org/zap/zapcore"
 	"log"
+	url2 "net/url"
+	"strconv"
 	"time"
 )
 
 type Config struct {
-	Ip                string
-	Port              int
+	Addr              string // tcp://127.0.0.1:29508
+	ip                string
+	port              int
 	ProtocolCoder     codec.Codec
 	GatewayPkgCoder   codec.PkgBuilder
 	DataCoder         codec.DataBuilder
@@ -22,8 +25,19 @@ type Config struct {
 	ServerLogWatcher  func(level zapcore.Level, msg string)
 	PackageLogWatcher func(msgType client.MsgType, msg string, pkg []byte)
 	ActionLogWatcher  func(action codec.Action, msg string)
-	Network           string
-	Path              string
+	network           string
+	path              string
+}
+
+func (c *Config) parseAddr() {
+	u, err := url2.Parse(c.Addr)
+	if err != nil {
+		panic("invalid address: " + c.Addr)
+	}
+	c.network = u.Scheme
+	c.ip = u.Hostname()
+	c.port, _ = strconv.Atoi(u.Port())
+	c.path = u.Path
 }
 
 func ToData(pkg *codec.PKG) codec.DataPtr {
@@ -52,11 +66,10 @@ func DataTypeCoder(dataType codec.Name) (codec.Codec, codec.PkgBuilder, codec.Da
 	return codec.NewLengthCodec(0xAB, 1024), codec.NewProtobufPackageBuilder(ToData, ToPkg), codec.NewProtobufDataBuilder()
 }
 
-func Default(ip string, port int, dataType codec.Name) *Config {
+func Default(addr string, dataType codec.Name) *Config {
 	protocolCoder, gatewayPkgCoder, dataCoder := DataTypeCoder(dataType)
 	return &Config{
-		Ip:                ip,
-		Port:              port,
+		Addr:              addr,
 		ProtocolCoder:     protocolCoder,
 		DataCoder:         dataCoder,
 		GatewayPkgCoder:   gatewayPkgCoder,
@@ -72,11 +85,10 @@ func Default(ip string, port int, dataType codec.Name) *Config {
 		ActionLogWatcher: func(action codec.Action, msg string) {
 			log.Println("action: ", action.String(), msg)
 		},
-		Network: "tcp",
 	}
 }
 
-func WsDefault(ip string, port int, dataType codec.Name) *Config {
+func WsDefault(addr string, dataType codec.Name) *Config {
 	protocolCoder := codec.NewWebsocketCodec()
 	var gatewayPkgCoder codec.PkgBuilder = codec.NewJsonPackageBuilder(ToData, ToPkg)
 	dataCoder := codec.NewJsonDataBuilder()
@@ -85,8 +97,7 @@ func WsDefault(ip string, port int, dataType codec.Name) *Config {
 		gatewayPkgCoder = codec.NewProtobufPackageBuilder(ToData, ToPkg)
 	}
 	return &Config{
-		Ip:                ip,
-		Port:              port,
+		Addr:              addr,
 		ProtocolCoder:     protocolCoder,
 		DataCoder:         dataCoder,
 		GatewayPkgCoder:   gatewayPkgCoder,
@@ -102,7 +113,5 @@ func WsDefault(ip string, port int, dataType codec.Name) *Config {
 		ActionLogWatcher: func(action codec.Action, msg string) {
 			log.Println("action: ", action.String(), msg)
 		},
-		Network: "ws",
-		Path:    "/wss",
 	}
 }

@@ -12,8 +12,8 @@ import (
 	"time"
 )
 
-func Default(ctx context.Context, ip string, port int, dataType codec.Name, target *security.Target, authToken *auth.Auth, securityOptions []security.Option, authOptions []auth.Option) *Server {
-	config := client.Default(ip, port, dataType)
+func Default(ctx context.Context, addr string, dataType codec.Name, target *security.Target, authToken *auth.Auth, securityOptions []security.Option, authOptions []auth.Option) *Server {
+	config := client.Default(addr, dataType)
 	baseConn := client.New(ctx, config)
 	securityConn := security.New(baseConn, target,
 		append([]security.Option{
@@ -40,8 +40,8 @@ func Default(ctx context.Context, ip string, port int, dataType codec.Name, targ
 	)
 }
 
-func WsDefault(ctx context.Context, ip string, port int, dataType codec.Name, target *security.Target, authToken *auth.Auth, securityOptions []security.Option, authOptions []auth.Option) *Server {
-	config := client.WsDefault(ip, port, dataType)
+func WsDefault(ctx context.Context, addr string, dataType codec.Name, target *security.Target, authToken *auth.Auth, securityOptions []security.Option, authOptions []auth.Option) *Server {
+	config := client.WsDefault(addr, dataType)
 	baseConn := client.New(ctx, config)
 	securityConn := security.New(baseConn, target,
 		append([]security.Option{

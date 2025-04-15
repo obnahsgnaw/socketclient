@@ -18,7 +18,7 @@ func main() {
 	}
 	dataType := codec.Proto
 
-	gw := gateway.WsDefault(ctx, "127.0.0.1", 29504, dataType, target)
+	gw := gateway.WsDefault(ctx, "ws://127.0.0.1:29504/wss", dataType, target, nil, nil, nil)
 
 	gw.Start()
 
